@@ -1,4 +1,6 @@
 mod app;
+mod chaos_game;
+
 use crate::app::App;
 use std::env;
 extern crate getopts;
@@ -12,10 +14,9 @@ fn print_usage(opts: Options) {
 fn parse_arguments() -> Matches{
     let args: Vec<String> = env::args().collect();
 
-    println!("{}",args[0]);
-
     let mut opts = Options::new();
     opts.optopt("v", "vertices", "Set the number of starting vertices", "3");
+    opts.optflag("c", "color", "Uses only one color");
     opts.optflag("h", "help", "Prints this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
@@ -34,13 +35,16 @@ fn main() {
     if matches.opt_present("h") {
         return;
     }
-    let mut starting_vertices : usize = 3;
+
+    let mut starting_vertices : usize = 0;
     if matches.opt_present("v") {
         if let Some(v) = matches.opt_str("v"){
             starting_vertices = v.parse::<usize>().unwrap();
         }
     }
 
-    let mut app = App::new(starting_vertices);
+    let only_one_color = matches.opt_present("c");
+
+    let mut app = App::new(starting_vertices,only_one_color);
     app.game_loop()
 }
