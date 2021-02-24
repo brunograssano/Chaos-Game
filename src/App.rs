@@ -14,11 +14,11 @@ pub struct App{
 
 impl App{
 
-    pub fn new(starting_vertices : usize, only_one_color : bool)->App{
+    pub fn new(starting_vertices : usize, jump_distance : f32, only_one_color : bool)->App{
         App{
             window: WindowSettings::new("Chaos Game", [WIDTH, HEIGHT])
                 .exit_on_esc(true).resizable(false).build().unwrap(),
-            chaos_game: ChaosGame::new(starting_vertices,only_one_color)
+            chaos_game: ChaosGame::new(starting_vertices,jump_distance,only_one_color)
         }
     }
 

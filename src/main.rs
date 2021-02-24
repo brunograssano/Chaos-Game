@@ -16,6 +16,7 @@ fn parse_arguments() -> Matches{
 
     let mut opts = Options::new();
     opts.optopt("v", "vertices", "Set the number of starting vertices", "3");
+    opts.optopt("j", "jump", "Set the distance to jump, default 0.5", "0.6180");
     opts.optflag("c", "color", "Uses only one color");
     opts.optflag("h", "help", "Prints this help menu");
     let matches = match opts.parse(&args[1..]) {
@@ -43,8 +44,15 @@ fn main() {
         }
     }
 
+    let mut jump_distance : f32 = 0.5;
+    if matches.opt_present("j") {
+        if let Some(j) = matches.opt_str("j"){
+            jump_distance = j.parse::<f32>().unwrap();
+        }
+    }
+
     let only_one_color = matches.opt_present("c");
 
-    let mut app = App::new(starting_vertices,only_one_color);
+    let mut app = App::new(starting_vertices,jump_distance,only_one_color);
     app.game_loop()
 }

@@ -6,7 +6,15 @@ const UPPER_LEFT_MARGIN : i32 = 20;
 const LOWER_RIGHT_MARGIN : i32 = 780;
 
 const TOTAL_COLORS : usize = 6;
+const DEFAULT_COLOR_ID: usize = 0;
+
 const DEFAULT_VERTICES : usize = 0;
+
+const DEFAULT_JUMP : f32 = 0.5;
+const MAX_JUMP_DISTANCE : f32 = 1.0;
+const MIN_JUMP_DISTANCE : f32 = 0.0;
+
+const ITERATIONS_PER_UPDATE : usize = 50;
 
 const COLORS: [[f32;4];TOTAL_COLORS] = [
     [0.048,1.0,0.081,1.0],    //green
@@ -44,21 +52,32 @@ fn is_centered(pos : i32) -> bool{
     UPPER_LEFT_MARGIN < pos && pos < LOWER_RIGHT_MARGIN
 }
 
+fn valid_jump_distance(jump_distance : f32) -> bool{
+    MIN_JUMP_DISTANCE < jump_distance && jump_distance < MAX_JUMP_DISTANCE
+}
+
+
 pub struct ChaosGame{
     points : Vec<Point>,
     vertices : Vec<Point>,
     point : Point,
     previous_selected : usize,
     pub update_game : bool,
+    jump_distance : f32,
+    only_one_color : bool,
 }
 
 
 impl ChaosGame{
 
-    pub fn new(mut starting_vertices : usize, only_one_color : bool) -> ChaosGame{
+    pub fn new(mut starting_vertices : usize, mut jump_distance: f32, only_one_color : bool) -> ChaosGame{
 
         if starting_vertices > TOTAL_COLORS{
             starting_vertices = DEFAULT_VERTICES;
+        }
+
+        if !valid_jump_distance(jump_distance){
+            jump_distance = DEFAULT_JUMP;
         }
 
         let mut color = COLORS[rand::thread_rng().gen::<usize>()%TOTAL_COLORS];
@@ -68,7 +87,9 @@ impl ChaosGame{
             vertices : Vec::new(),
             point : Point::new(color),
             update_game : false,
-            previous_selected : 0
+            previous_selected : 0,
+            jump_distance,
+            only_one_color
         };
 
         for i in 0..starting_vertices {
@@ -82,16 +103,16 @@ impl ChaosGame{
         if !self.update_game || self.vertices.is_empty() {
             return;
         }
-
-        let selected_point = self.get_vertex_to_move();
-
-        self.move_point(selected_point);
+        for _i in 0..ITERATIONS_PER_UPDATE {
+            let selected_point = self.get_vertex_to_move();
+            self.move_point(selected_point);
+        }
 
     }
 
     fn move_point(&mut self, selected_point: Point) {
-        self.point.x = (self.point.x + selected_point.x) / 2;
-        self.point.y = (self.point.y + selected_point.y) / 2;
+        self.point.x = (((self.point.x + selected_point.x) as f32) * self.jump_distance) as i32;
+        self.point.y = (((self.point.y + selected_point.y) as f32) * self.jump_distance) as i32;
         self.point.color = selected_point.color;
         self.points.push(self.point);
     }
@@ -128,7 +149,7 @@ impl ChaosGame{
     pub fn add_vertex(&mut self, mouse_pos: &mut (f64, f64)) {
         if self.vertices.len() < TOTAL_COLORS {
             let (x, y) = mouse_pos;
-            let color_id = self.vertices.len();
+            let color_id = if self.only_one_color { DEFAULT_COLOR_ID } else { self.vertices.len() };
             self.vertices.push(Point {
                 x: *x as i32,
                 y: *y as i32,
