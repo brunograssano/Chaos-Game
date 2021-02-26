@@ -31,7 +31,7 @@ impl App{
             clear([0.0;4], graphics);
 
             for point in points {
-                rectangle(point.color, [point.x as f64,point.y as f64,2.0,2.0], context.transform, graphics);
+                rectangle(point.color, [point.x as f64,point.y as f64,1.0,1.0], context.transform, graphics);
             }
 
         });
@@ -61,22 +61,17 @@ impl App{
             }
             Button::Keyboard(button)=> {
                 if button == Key::S {
-                    self.start_game();
+                    self.chaos_game.start_game();
                 }
                 else if button == Key::P {
-                    self.pause_game();
+                    self.chaos_game.pause_game();
+                }
+                else if button == Key::R {
+                    self.chaos_game.reset();
                 }
             }
             _ => {}
         }
-    }
-
-    fn pause_game(&mut self) {
-        self.chaos_game.update_game = false;
-    }
-
-    fn start_game(&mut self) {
-        self.chaos_game.update_game = true;
     }
 
 }

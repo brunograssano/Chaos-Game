@@ -6,23 +6,24 @@ const UPPER_LEFT_MARGIN : i32 = 20;
 const LOWER_RIGHT_MARGIN : i32 = 780;
 
 const TOTAL_COLORS : usize = 6;
-const DEFAULT_COLOR_ID: usize = 0;
+const DEFAULT_COLOR_ID: usize = 1;
 
+const MAX_VERTICES : usize = TOTAL_COLORS;
 const DEFAULT_VERTICES : usize = 0;
 
 const DEFAULT_JUMP : f32 = 0.5;
 const MAX_JUMP_DISTANCE : f32 = 1.0;
 const MIN_JUMP_DISTANCE : f32 = 0.0;
 
-const ITERATIONS_PER_UPDATE : usize = 50;
+const ITERATIONS_PER_UPDATE : usize = 400;
 
 const COLORS: [[f32;4];TOTAL_COLORS] = [
-    [0.048,1.0,0.081,1.0],    //green
-    [0.061, 0.088, 1.0,1.0],  //blue
-    [1.0, 0.050, 0.048,1.0],  //red
-    [0.5,0.0,0.5,1.0],        //purple
-    [0.8,1.0,0.02,1.0],       //yellow
-    [0.2, 0.9, 0.92,1.0]      //cyan
+    [0.048,1.0,0.081,0.5],    //green
+    [0.061, 0.088, 1.0,0.5],  //blue
+    [1.0, 0.050, 0.048,0.5],  //red
+    [0.5,0.0,0.5,0.5],        //purple
+    [0.8,1.0,0.02,0.5],       //yellow
+    [0.2, 0.9, 0.92,0.5]      //cyan
 ];
 
 #[derive(Clone,Copy)]
@@ -34,13 +35,13 @@ pub struct Point{
 
 impl Point{
     pub fn new(color : [f32;4])->Point{
-        let x = get_number();
-        let y = get_number();
+        let x = get_position();
+        let y = get_position();
         Point{ x, y ,color}
     }
 }
 
-fn get_number() -> i32{
+fn get_position() -> i32{
     let mut pos : i32 = 0;
     while !is_centered(pos) {
         pos = rand::thread_rng().gen::<i32>()% RANGE_FOR_POINTS as i32;
@@ -56,13 +57,19 @@ fn valid_jump_distance(jump_distance : f32) -> bool{
     MIN_JUMP_DISTANCE < jump_distance && jump_distance < MAX_JUMP_DISTANCE
 }
 
+fn get_random_color() -> [f32;4]{
+    let color_id = rand::thread_rng().gen::<usize>()%TOTAL_COLORS;
+    COLORS[color_id]
+}
+
 
 pub struct ChaosGame{
     points : Vec<Point>,
     vertices : Vec<Point>,
     point : Point,
     previous_selected : usize,
-    pub update_game : bool,
+    update_game : bool,
+    starting_vertices : usize,
     jump_distance : f32,
     only_one_color : bool,
 }
@@ -72,7 +79,7 @@ impl ChaosGame{
 
     pub fn new(mut starting_vertices : usize, mut jump_distance: f32, only_one_color : bool) -> ChaosGame{
 
-        if starting_vertices > TOTAL_COLORS{
+        if starting_vertices > MAX_VERTICES{
             starting_vertices = DEFAULT_VERTICES;
         }
 
@@ -80,7 +87,7 @@ impl ChaosGame{
             jump_distance = DEFAULT_JUMP;
         }
 
-        let mut color = COLORS[rand::thread_rng().gen::<usize>()%TOTAL_COLORS];
+        let color = get_random_color();
 
         let mut game = ChaosGame{
             points : Vec::new(),
@@ -88,19 +95,24 @@ impl ChaosGame{
             point : Point::new(color),
             update_game : false,
             previous_selected : 0,
+            starting_vertices,
             jump_distance,
             only_one_color
         };
 
-        for i in 0..starting_vertices {
-            color = if only_one_color { color } else { COLORS[i] };
-            game.vertices.push(Point::new(color))
-        }
+        game.initialize_starting_vertices(color);
         game
     }
 
+    fn initialize_starting_vertices(&mut self, color : [f32;4]) {
+        for i in 0..self.starting_vertices {
+            let color = if self.only_one_color { color } else { COLORS[i] };
+            self.vertices.push(Point::new(color))
+        }
+    }
+
     pub fn update(&mut self){
-        if !self.update_game || self.vertices.is_empty() {
+        if !self.can_update() {
             return;
         }
         for _i in 0..ITERATIONS_PER_UPDATE {
@@ -108,6 +120,10 @@ impl ChaosGame{
             self.move_point(selected_point);
         }
 
+    }
+
+    fn can_update(&self) -> bool{
+        self.update_game && !self.vertices.is_empty()
     }
 
     fn move_point(&mut self, selected_point: Point) {
@@ -157,4 +173,22 @@ impl ChaosGame{
             });
         }
     }
+
+    pub fn pause_game(&mut self) {
+        self.update_game = false;
+    }
+
+    pub fn start_game(&mut self) {
+        self.update_game = true;
+    }
+
+    pub fn reset(&mut self){
+        self.points = Vec::new();
+        self.vertices = Vec::new();
+
+        let color = get_random_color();
+        self.point = Point::new(color);
+        self.initialize_starting_vertices(color);
+    }
+
 }
